@@ -1,0 +1,17 @@
+version: "3"
+
+services:
+  database:
+    image: postgres:latest
+    container_name: ct-database
+    restart: on-failure
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: manman
+      POSTGRES_DB: cashtroops
+      PGDATA: /var/lib/postgresql/coin/data/db
+      POSTGRES_EXTENSIONS: uuid-ossp
+    volumes:
+      - "${HOME}/mnt/cashtroops/data:/var/lib/postgresql/data"
+    ports:
+      - "5901:5432"
