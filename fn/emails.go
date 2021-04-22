@@ -81,8 +81,29 @@ func GenerateCoinReceivedEmail() (string, error) {
 	panic("")
 }
 
-func GenerateNairaReceivedEmail() (string, error) {
-	panic("")
+func GeneratePaymentCompletedEmail(accountName string, beneficiary *types.Beneficiary, payment *types.Payment) (string, error) {
+	h := hermes.Hermes{
+		Product: hermes.Product{
+			Name:        "CashTroops",
+			Link:        "https://cashtroops.africa",
+			Logo:        "",
+			Copyright:   "cashtroops.africa",
+			TroubleText: "Contact: hello@cashtroops.africa",
+		},
+	}
+	e := hermes.Email{
+		Body: hermes.Body{
+			Name: accountName,
+			Intros: []string{
+				fmt.Sprintf("N%d has been successfully sent to %s", payment.KoboAmount/100, beneficiary.AccountName),
+			},
+			Outros: []string{
+				"Thanks for choosing CashTroops",
+			},
+			Signature: "Thanks",
+		},
+	}
+	return h.GenerateHTML(e)
 }
 
 func GenerateDealCompletedEmail() (string, error) {

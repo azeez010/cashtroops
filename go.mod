@@ -13,6 +13,7 @@ require (
 	github.com/jinzhu/gorm v1.9.16
 	github.com/matcornic/hermes/v2 v2.1.0
 	github.com/pkg/errors v0.8.1
+	github.com/rpip/paystack-go v0.0.0-20210201191211-18b1a34def83
 	github.com/sendgrid/rest v2.6.3+incompatible // indirect
 	github.com/sendgrid/sendgrid-go v3.8.0+incompatible
 	github.com/sirupsen/logrus v1.8.1

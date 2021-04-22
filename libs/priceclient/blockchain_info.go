@@ -2,6 +2,7 @@ package priceclient
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/adigunhammedolalekan/cashtroops/libs"
 	"github.com/sirupsen/logrus"
 )
@@ -30,15 +31,24 @@ type client struct {
 }
 
 func New(logger *logrus.Logger) Client {
-	return &client{inner: libs.NewHttpClient(logger)}
+	return &client{inner: libs.NewHttpClient(logger, "")}
 }
 
 func (c *client) CurrentPrice() (*Result, error) {
-	r := &Result{}
-	u := "https://blockchain.info/ticker"
-	err := c.inner.Do(u, "GET", nil, r)
-	if err != nil {
-		return nil, err
+	// retry up to 5 times
+	count := 0
+	for {
+		if count > 5 {
+			break
+		}
+		r := &Result{}
+		u := "https://blockchain.info/ticker"
+		err := c.inner.Do(u, "GET", nil, r)
+		if err != nil {
+			count += 1
+			continue
+		}
+		return r, nil
 	}
-	return r, nil
+	return nil, errors.New("failed to get BTC price")
 }

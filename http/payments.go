@@ -112,3 +112,22 @@ func (handler *PaymentHandler) ListPayments(w http.ResponseWriter, r *http.Reque
 	render.Status(r, http.StatusOK)
 	render.Respond(w, r, &SuccessResponse{Error: false, Message: "success", Data: data})
 }
+
+func (handler *PaymentHandler) TransferEventHandler(w http.ResponseWriter, r *http.Request) {
+	var event struct {
+		Event string               `json:"event"`
+		Data  *types.TransferEvent `json:"data"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&event); err != nil {
+		BadRequestResponse(w, r, "malformed json body")
+		return
+	}
+	err := handler.paymentOps.CompletePayment(event.Event, event.Data)
+	if err != nil {
+		handler.logger.WithError(err).Error("failed to complete transfer")
+		InternalServerErrorResponse(w, r, "failed to complete transfer")
+		return
+	}
+	render.Status(r, http.StatusOK)
+	render.Respond(w, r, &SuccessResponse{Error: false, Message: "success"})
+}

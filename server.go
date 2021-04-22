@@ -1,16 +1,22 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/adigunhammedolalekan/cashtroops/config"
 	"github.com/adigunhammedolalekan/cashtroops/database"
 	"github.com/adigunhammedolalekan/cashtroops/http"
 	"github.com/adigunhammedolalekan/cashtroops/libs/bc"
+	"github.com/adigunhammedolalekan/cashtroops/libs/paystackclient"
 	"github.com/adigunhammedolalekan/cashtroops/ops"
 	"github.com/adigunhammedolalekan/cashtroops/session"
+	"github.com/adigunhammedolalekan/cashtroops/types"
 	"github.com/go-chi/chi"
 	"github.com/sirupsen/logrus"
+	"io/ioutil"
 	nethttp "net/http"
+	"os"
+	"path/filepath"
 )
 
 func main() {
@@ -32,10 +38,17 @@ func main() {
 	if err != nil {
 		logger.WithError(err).Fatal("failed to init BC client")
 	}
+	banks, err := loadBanks()
+	if err != nil {
+		logger.WithError(err).Fatal("failed to load bank data")
+	}
 
+	ps := paystackclient.New(cfg.PayStackKey, logger)
 	userOps := ops.NewUserOps(db, sess, logger)
-	accountOps := ops.NewAccountOps(db, logger)
-	paymentOpts := ops.NewPaymentOps(db, bcClient, userOps, accountOps, logger)
+	accountOps := ops.NewAccountOps(db, ps, logger)
+	accountOps.SetBanks(banks)
+
+	paymentOpts := ops.NewPaymentOps(db, bcClient, userOps, accountOps, ps, logger)
 	userHandler := http.NewUserHandler(userOps, logger)
 	accountHandler := http.NewAccountHandler(accountOps, userOps, logger)
 	paymentHandler := http.NewPaymentHandler(paymentOpts, userOps, logger)
@@ -59,6 +72,8 @@ func main() {
 		r.Post("/payment/init", paymentHandler.InitializePayment)
 		r.Post("/txn/events", paymentHandler.TxnEventHandler)
 		r.Get("/me/payments", paymentHandler.ListPayments)
+		r.Post("/transfer/events", paymentHandler.TransferEventHandler)
+		r.Get("/banks", accountHandler.Banks)
 	})
 
 	addr := fmt.Sprintf(":%s", cfg.Addr)
@@ -66,4 +81,21 @@ func main() {
 	if err := nethttp.ListenAndServe(addr, router); err != nil {
 		logger.WithError(err).Fatal("failed to start API server")
 	}
+}
+
+func loadBanks() ([]types.Bank, error) {
+	wd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+	dir := filepath.Join(wd, "banks.json")
+	data, err := ioutil.ReadFile(dir)
+	if err != nil {
+		return nil, err
+	}
+	values := make([]types.Bank, 0)
+	if err := json.Unmarshal(data, &values); err != nil {
+		return nil, err
+	}
+	return values, nil
 }

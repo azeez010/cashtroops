@@ -74,3 +74,15 @@ func (handler *AccountHandler) ListBeneficiaries(w http.ResponseWriter, r *http.
 	render.Status(r, http.StatusOK)
 	render.Respond(w, r, &SuccessResponse{Error: false, Message: "success", Data: data})
 }
+
+func (handler *AccountHandler) Banks(w http.ResponseWriter, r *http.Request) {
+	sess, err := handler.userOps.GetSession(r.Header.Get(accountHeaderKey))
+	if err != nil {
+		ForbiddenRequestResponse(w, r, err.Error())
+		return
+	}
+	handler.logger.WithField("account_id", sess.ID.String()).
+		Info("requesting bank list")
+	render.Status(r, http.StatusOK)
+	render.Respond(w, r, &SuccessResponse{Error: false, Message: "success", Data: handler.accountOps.GetBanks()})
+}

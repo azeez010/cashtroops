@@ -2,6 +2,7 @@ package ops
 
 import (
 	"github.com/adigunhammedolalekan/cashtroops/errors"
+	"github.com/adigunhammedolalekan/cashtroops/libs/paystackclient"
 	"github.com/adigunhammedolalekan/cashtroops/types"
 	"github.com/jinzhu/gorm"
 	"github.com/sirupsen/logrus"
@@ -13,18 +14,28 @@ type AccountOps interface {
 	RemoveBeneficiary(owner, beneficiaryId string) error
 	ListBeneficiariesFor(userId string) ([]*types.Beneficiary, error)
 	GetBeneficiaryByAttr(attr string, value interface{}) (*types.Beneficiary, error)
+	SetBanks(banks []types.Bank)
+	GetBanks() []types.Bank
+	ResolveAccount(accountNumber, bankCode string) (*types.BankAccount, error)
 }
 
 type accountOps struct {
 	db     *gorm.DB
 	logger *logrus.Logger
+	ps     paystackclient.Client
+	banks  []types.Bank
 }
 
-func NewAccountOps(db *gorm.DB, logger *logrus.Logger) AccountOps {
+func NewAccountOps(db *gorm.DB, ps paystackclient.Client, logger *logrus.Logger) AccountOps {
 	return &accountOps{
 		db:     db,
+		ps:     ps,
 		logger: logger,
 	}
+}
+
+func (a *accountOps) SetBanks(banks []types.Bank) {
+	a.banks = banks
 }
 
 func (a *accountOps) AddBeneficiary(userId string, beneficiary *types.CreateBeneficiaryOpts) (*types.Beneficiary, error) {
@@ -61,4 +72,12 @@ func (a *accountOps) GetBeneficiaryByAttr(attr string, value interface{}) (*type
 	bf := &types.Beneficiary{}
 	err := a.db.Table("beneficiaries").Where(attr+" = ?", value).First(bf).Error
 	return bf, err
+}
+
+func (a *accountOps) GetBanks() []types.Bank {
+	return a.banks
+}
+
+func (a *accountOps) ResolveAccount(accountNumber, bankCode string) (*types.BankAccount, error) {
+	return a.ps.ResolveAccountNumber(accountNumber, bankCode)
 }

@@ -44,7 +44,7 @@ func New(token, coin, network string, logger *logrus.Logger) (Client, error) {
 		token:      token,
 		coin:       coin,
 		network:    network,
-		httpClient: libs.NewHttpClient(logger),
+		httpClient: libs.NewHttpClient(logger, ""),
 		logger:     logger,
 	}, nil
 }

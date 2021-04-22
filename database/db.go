@@ -24,5 +24,6 @@ func runMigration(db *gorm.DB) {
 		&types.Address{},
 		&types.Hook{},
 		&types.Rate{},
+		&types.Transfer{},
 		&types.Payment{})
 }

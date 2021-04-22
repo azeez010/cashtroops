@@ -63,10 +63,6 @@ func (u *userOps) CreateUser(user *types.CreateUserOpts) (*types.User, error) {
 	token := types.NewToken(fn.GenerateRandomString(64), newUser)
 	newUser.Token = token.Key
 
-	if err := u.session.Create(token); err != nil {
-		u.logger.WithError(err).Error("failed to create auth token for new user")
-		return nil, errors.New(http.StatusInternalServerError, "failed to create account at this time. please retry later")
-	}
 	tx := u.db.Begin()
 	if err := tx.Error; err != nil {
 		return nil, err
@@ -74,6 +70,10 @@ func (u *userOps) CreateUser(user *types.CreateUserOpts) (*types.User, error) {
 	if err := tx.Table("users").Create(newUser).Error; err != nil {
 		tx.Rollback()
 		u.logger.WithError(err).Error("failed to create user in the database")
+		return nil, errors.New(http.StatusInternalServerError, "failed to create account at this time. please retry later")
+	}
+	if err := u.session.Create(token); err != nil {
+		u.logger.WithError(err).Error("failed to create auth token for new user")
 		return nil, errors.New(http.StatusInternalServerError, "failed to create account at this time. please retry later")
 	}
 	verification := types.NewVerification(user.Email, fn.GenRandomCode())

@@ -11,12 +11,14 @@ import (
 )
 
 type HttpClient struct {
-	inner  *http.Client
-	logger *logrus.Logger
+	inner       *http.Client
+	bearerToken string
+	logger      *logrus.Logger
+	debug       bool
 }
 
-func NewHttpClient(logger *logrus.Logger) *HttpClient {
-	return &HttpClient{logger: logger, inner: &http.Client{Timeout: 60 * time.Second}}
+func NewHttpClient(logger *logrus.Logger, bearerToken string) *HttpClient {
+	return &HttpClient{logger: logger, bearerToken: bearerToken, inner: &http.Client{Timeout: 60 * time.Second}}
 }
 
 func (o *HttpClient) Do(url, method string, reqBody, resp interface{}) error {
@@ -32,6 +34,9 @@ func (o *HttpClient) Do(url, method string, reqBody, resp interface{}) error {
 		return err
 	}
 	request.Header.Add("Content-Type", "application/json")
+	if o.bearerToken != "" {
+		request.Header.Add("Authorization", "Bearer "+o.bearerToken)
+	}
 
 	res, err := o.inner.Do(request)
 	if err != nil {
@@ -39,15 +44,20 @@ func (o *HttpClient) Do(url, method string, reqBody, resp interface{}) error {
 	}
 	defer func(res *http.Response) {
 		err := res.Body.Close()
-		o.logger.WithError(err).Error("error closing response body")
+		if err != nil {
+			o.logger.WithError(err).Error("error closing response body")
+		}
 	}(res)
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return err
 	}
+	if o.debug {
+		o.logger.WithField("api_call_response", string(body)).Info("response body")
+	}
 	if res.StatusCode < 101 || res.StatusCode > 299 {
-		o.logger.WithError(errors.New(string(body))).Error("BC API error")
+		o.logger.WithError(errors.New(string(body))).Error("API call error")
 		return errors.New("failed to complete api call")
 	}
 	if resp != nil {

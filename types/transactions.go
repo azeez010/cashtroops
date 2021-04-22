@@ -10,6 +10,8 @@ type PaymentStatus string
 
 const (
 	INITIALIZED PaymentStatus = "INITIALIZED"
+	FAILED      PaymentStatus = "FAILED"
+	REVERSED    PaymentStatus = "REVERSED"
 	DONE        PaymentStatus = "DONE"
 )
 
@@ -62,6 +64,24 @@ type Hook struct {
 	Ts      time.Time `json:"ts"`
 }
 
+type Transfer struct {
+	TransferId   string    `json:"transfer_id" gorm:"primary_key"`
+	PaymentId    string    `json:"payment_id"`
+	Reference    string    `json:"reference"`
+	Integration  int       `json:"integration"`
+	Domain       string    `json:"domain"`
+	Amount       int       `json:"amount"`
+	Currency     string    `json:"currency"`
+	Source       string    `json:"source"`
+	Reason       string    `json:"reason"`
+	Recipient    int       `json:"recipient"`
+	Status       string    `json:"status"`
+	TransferCode string    `json:"transfer_code"`
+	ID           int       `json:"id"`
+	CreatedAt    time.Time `json:"createdAt"`
+	UpdatedAt    time.Time `json:"updatedAt"`
+}
+
 func (a *Address) BeforeCreate(scope *gorm.Scope) error {
 	return scope.SetColumn("ID", uuid.New().String())
 }
@@ -80,6 +100,10 @@ func (b *Hook) BeforeCreate(scope *gorm.Scope) error {
 
 func (r *Rate) BeforeCreate(scope *gorm.Scope) error {
 	return scope.SetColumn("ID", uuid.New().String())
+}
+
+func (r *Transfer) BeforeCreate(scope *gorm.Scope) error {
+	return scope.SetColumn("transfer_id", uuid.New().String())
 }
 
 func NewBalance(userId, coin string, value int64) *Balance {

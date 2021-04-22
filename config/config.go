@@ -9,6 +9,7 @@ type Config struct {
 	DatabaseUrl      string
 	SessionCacheDir  string
 	BlockCypherToken string
+	PayStackKey      string
 }
 
 func New() Config {
@@ -17,5 +18,6 @@ func New() Config {
 		DatabaseUrl:      os.Getenv("DATABASE_URL"),
 		SessionCacheDir:  os.Getenv("SESSION_CACHE"),
 		BlockCypherToken: os.Getenv("BC_TOKEN"),
+		PayStackKey:      os.Getenv("PS_KEY"),
 	}
 }
