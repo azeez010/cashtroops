@@ -1,1 +1,3 @@
 ### CashTroops
+
+A passion project :)

@@ -7,7 +7,6 @@ import (
 )
 
 func TestSendEmail(t *testing.T) {
-	// os.Setenv("SG_KEY", "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")
 	err := SendEmail(&types.MailRequest{
 		User:  "Lekan Adigun",
 		Email: "adigunadunfe@gmail.com",
